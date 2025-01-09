@@ -105,13 +105,13 @@ def read_detections_from_csv_folder(folder_path):
 
 def run_track(args):
 
+    detection_data = args.detection_data.replace("\\", "/")
 
     tracker = OCSort(det_thresh=args.track_thresh, iou_threshold=args.iou_thresh, use_byte=args.use_byte)
     results = []
 
     # Read detections from the specified folder
-    detections_bytetrack, current_folder = read_detections_from_csv_folder(
-        'C:/transmetric/dev/python/AI_camera/trial/OC_Sort_tracker/067-00007_Wed_Thur_27hrs_1500/2024_1204_154045_002A/2024_1204_154045_002A_2024_1218_104501_raw_detection')
+    detections_bytetrack, current_folder = read_detections_from_csv_folder(detection_data)
 
     # Process each frame (frame numbers may be non-continuous)
     for frame_number in sorted(detections_bytetrack.keys()):
@@ -178,10 +178,6 @@ def main(exp, args):
 
 
 if __name__ == "__main__":
-    args = make_parser().parse_args()
-    args.exp_file = "./exps/example/mot/yolox_dancetrack_val.py"
-    args.save_result = True
-    args.demo_type = "video"
-    args.use_byte = True
+    args = make_parser("config.yaml").parse_args()
     exp = get_exp(args.exp_file, args.name)
     main(exp, args)

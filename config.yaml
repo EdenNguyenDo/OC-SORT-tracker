@@ -1,0 +1,69 @@
+# Experiment Parameters
+expn: null  # Experiment name (optional)
+name: null  # Model name (optional)
+
+
+# Distributed Training Settings
+dist-backend: "nccl"  # Distributed backend
+output_dir: "evaldata/trackers/mot_challenge"  # Output directory
+dist-url: null  # URL for setting up distributed training
+batch-size: 64  # Batch size
+devices: 'cpu'  # Devices for training (optional)
+
+# Distributed Training Specific
+local_rank: 0  # Local rank for distributed training
+num_machines: 1  # Number of nodes for training
+machine_rank: 0  # Node rank for multi-node training
+
+# Experiment File
+exp_file: "./exps/example/mot/yolox_dancetrack_val.py"  # Experiment description file
+
+# Precision and Optimization Settings
+fp32: false  # Use mix precision for evaluating
+fuse: false  # Fuse conv and bn for testing
+trt: false  # Use TensorRT model for testing
+test: false  # Evaluate on the test-dev set
+speed: false  # Speed test only
+
+# Additional Options to Modify Config
+opts: []  # Additional options can be passed here as a list (optional)
+
+# Detection Parameters
+ckpt: null  # Checkpoint for evaluation
+conf: 0.12  # Confidence threshold for detection
+nms: 0.1  # Non-maximum suppression threshold
+tsize: null  # Test image size (optional)
+seed: null  # Evaluation seed (optional)
+
+# Tracking Parameters
+track_thresh: 0.8  # Detection confidence threshold for tracking
+iou_thresh: 0.2  # IOU threshold for SORT matching
+min_hits: 6  # Minimum hits to create track in SORT
+inertia: 0.4  # Weight of VDC term in cost matrix
+deltat: 1.5  # Time step difference to estimate direction
+track_buffer: 60  # Frames for keeping lost tracks
+match_thresh: 0.85  # Matching threshold for tracking
+min-box-area: 150  # Filter out tiny boxes
+gt-type: "_val_half"  # Suffix for ground truth annotation
+mot20: false  # Test on MOT20 dataset
+public: false  # Use public detection
+asso: "giou"  # Similarity function for matching
+use_byte: true  # Use Byte in tracking
+
+# KITTI/BDD100K Inference with Public Detections
+raw_results_path: "exps/permatrack_kitti_test/"  # Path to raw tracking results from other trackers
+out_path: null  # Path to save output results (optional)
+dataset: "mot"  # Dataset type (kitti or bdd)
+hp: false  # Use head padding to add missing objects during track initialization (offline)
+
+# Demo Video Settings
+demo_type: "image"  # Demo type (image, video, or webcam)
+path: "videos/dance_demo.mp4"  # Path to images or video
+camid: 0  # Webcam demo camera ID
+save_result: false  # Whether to save the inference result of image/video
+aspect_ratio_thresh: 1.5  # Threshold for filtering boxes with aspect ratio above this value
+min_box_area: 8  # Filter out tiny boxes
+device: "gpu"  # Device to run the model (cpu or gpu)
+
+detection_data: "C:/transmetric/dev/python/AI_camera/trial/OC_Sort_tracker/067-00007_Wed_Thur_27hrs_1500/2024_1204_154045_002A/2024_1204_154045_002A_2024_1218_104501_raw_detection"
+
