@@ -66,4 +66,5 @@ min_box_area: 8  # Filter out tiny boxes
 device: "gpu"  # Device to run the model (cpu or gpu)
 
 detection_data: "C:/transmetric/dev/python/AI_camera/trial/OC_Sort_tracker/067-00007_Wed_Thur_27hrs_1500/2024_1204_154045_002A/2024_1204_154045_002A_2024_1218_104501_raw_detection"
+output: "C:/transmetric/dev/python/AI_camera/trial/OC_Sort_tracker/tracks"
 

@@ -82,5 +82,6 @@ def make_parser(config_path=None):
 
     # Detection File Path
     parser.add_argument('--detection_data', default=config.get("detection_data"), type=str, help="Path to the raw detection file")
+    parser.add_argument('--output', default=config.get("output"), type=str, help="Path to the output directory")
 
     return parser

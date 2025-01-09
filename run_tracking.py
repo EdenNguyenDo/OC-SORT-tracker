@@ -23,27 +23,26 @@ IMAGE_EXT = [".jpg", ".jpeg", ".webp", ".bmp", ".png"]
 
 from utils.args import make_parser
 
-def get_base_directory():
-    """
-    Get the base directory where the application is running.
-    """
-    if getattr(sys, 'frozen', False):  # Check if running as a bundled executable
-        # Always set the base directory to the persistent storage location
-        home_dir = os.path.expanduser("~")
-        base_dir = os.path.join(home_dir, "COUNT_FILES", "tupi-ai-realtime")
-    else:
-        base_dir = os.path.dirname(os.path.abspath(__file__)) # Use script's original directory
+#
+# def get_base_directory():
+#     """
+#     Get the base directory where the application is running.
+#     """
+#     if getattr(sys, 'frozen', False):  # Check if running as a bundled executable
+#         # Always set the base directory to the persistent storage location
+#         home_dir = os.path.expanduser("~")
+#         base_dir = os.path.join(home_dir, "COUNT_FILES", "tupi-ai-realtime")
+#     else:
+#         base_dir = os.path.dirname(os.path.abspath(__file__)) # Use script's original directory
+#
+#     return base_dir
 
-    return base_dir
 
-def create_track_file(folder_path, track_id):
-    base_dir = get_base_directory()
+def create_track_file(output_dir, folder_path, track_id):
 
-    dir_name = folder_path.split('/')[-3]
+    dir_name = folder_path.split("/")[-3]
 
-    parent = os.path.join(base_dir, 'tracks')
-
-    full_path = os.path.join(parent, dir_name, folder_path.split('/')[-2])
+    full_path = os.path.join(output_dir, dir_name, folder_path.split('/')[-2])
 
     # Ensure the directory exists
     os.makedirs(full_path, exist_ok=True)
@@ -105,7 +104,11 @@ def read_detections_from_csv_folder(folder_path):
 
 def run_track(args):
 
-    detection_data = args.detection_data.replace("\\", "/")
+    # detection_data = args.detection_data.replace("\\", "/")
+    # output = args.output.replace("\\", "/")
+
+    detection_data = args.detection_data
+    output = args.output
 
     tracker = OCSort(det_thresh=args.track_thresh, iou_threshold=args.iou_thresh, use_byte=args.use_byte)
     results = []
@@ -115,14 +118,14 @@ def run_track(args):
 
     # Process each frame (frame numbers may be non-continuous)
     for frame_number in sorted(detections.keys()):
-        outputs = detections[frame_number]
+        outputs_by_frame = detections[frame_number]
 
-        if len(outputs) > 0:
+        if len(outputs_by_frame) > 0:
 
-            detections_tensor = [torch.tensor(outputs, dtype=torch.float32)]
+            detections_tensor = [torch.tensor(outputs_by_frame, dtype=torch.float32)]
 
             if detections_tensor[0] is not None:
-                online_targets = tracker.update(detections_tensor[0], 480, 640, exp.test_size)
+                online_targets = tracker.update(detections_tensor[0], 480, 640)
                 online_tlwhs = []
                 online_ids = []
                 for t in online_targets:
@@ -138,7 +141,7 @@ def run_track(args):
 
 
                         # Save tracking data into per-track CSV files
-                        track_file = create_track_file(current_folder, int(tid))
+                        track_file = create_track_file(output, current_folder, int(tid))
 
                         with open(track_file, 'a', newline='') as csvfile:
                             csv_writer = csv.writer(csvfile)
