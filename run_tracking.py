@@ -68,7 +68,7 @@ def read_detections_from_csv_folder(folder_path):
         dict: A dictionary where keys are frame numbers (int) derived from CSV filenames,
         and values are lists of detections (xmin, ymin, xmax, ymax, score, label).
     """
-    detection_bytetrack = {}
+    detection_dict = {}
 
     for file_name in os.listdir(folder_path):
         if file_name.endswith(".csv"):
@@ -78,7 +78,7 @@ def read_detections_from_csv_folder(folder_path):
                 file_path = os.path.join(folder_path, file_name)
 
                 # Initialize the list of detections for this frame
-                detection_bytetrack[frame_number] = []
+                detection_dict[frame_number] = []
 
                 with open(file_path, 'r') as csv_file:
                     csv_reader = csv.reader(csv_file)
@@ -94,14 +94,14 @@ def read_detections_from_csv_folder(folder_path):
                             ymax = float(row[3])
                             score = float(row[4])
                             label = int(row[5])
-                            detection_bytetrack[frame_number].append([xmin, ymin, xmax, ymax, score, label])
+                            detection_dict[frame_number].append([xmin, ymin, xmax, ymax, score, label])
                         except (ValueError, IndexError):
                             print(f"Skipping invalid row in file {file_name}: {row}")
 
             except Exception as e:
                 print(f"Error processing file {file_name}: {e}")
 
-    return detection_bytetrack, folder_path
+    return detection_dict, folder_path
 
 def run_track(args):
 
@@ -111,11 +111,11 @@ def run_track(args):
     results = []
 
     # Read detections from the specified folder
-    detections_bytetrack, current_folder = read_detections_from_csv_folder(detection_data)
+    detections, current_folder = read_detections_from_csv_folder(detection_data)
 
     # Process each frame (frame numbers may be non-continuous)
-    for frame_number in sorted(detections_bytetrack.keys()):
-        outputs = detections_bytetrack[frame_number]
+    for frame_number in sorted(detections.keys()):
+        outputs = detections[frame_number]
 
         if len(outputs) > 0:
 
@@ -157,27 +157,28 @@ def run_track(args):
         #     logger.info(f"save results to {res_file}")
 
 
-def main(exp, args):
-    if not args.expn:
-        args.expn = exp.exp_name
-
-    output_dir = osp.join(exp.output_dir, args.expn)
-    os.makedirs(output_dir, exist_ok=True)
-
-    args.device = torch.device("cuda" if args.device == "gpu" else "cpu")
-
-    logger.info("Args: {}".format(args))
-
-    model = exp.get_model().to(args.device)
-    logger.info("Model Summary: {}".format(get_model_info(model, exp.test_size)))
-    model.eval()
-
-    # current_time = time.localtime()
-
-    run_track(args)
+# def main(exp, args):
+#     if not args.expn:
+#         args.expn = exp.exp_name
+#
+#     output_dir = osp.join(exp.output_dir, args.expn)
+#     os.makedirs(output_dir, exist_ok=True)
+#
+#     args.device = torch.device("cuda" if args.device == "gpu" else "cpu")
+#
+#     logger.info("Args: {}".format(args))
+#
+#     model = exp.get_model().to(args.device)
+#     logger.info("Model Summary: {}".format(get_model_info(model, exp.test_size)))
+#     model.eval()
+#
+#     # current_time = time.localtime()
+#
+#     run_track(args)
 
 
 if __name__ == "__main__":
     args = make_parser("config.yaml").parse_args()
-    exp = get_exp(args.exp_file, args.name)
-    main(exp, args)
+    # exp = get_exp(args.exp_file, args.name)
+    # main(exp, args)
+    run_track(args)
