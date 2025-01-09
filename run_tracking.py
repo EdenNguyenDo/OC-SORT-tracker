@@ -103,14 +103,15 @@ def read_detections_from_csv_folder(folder_path):
 
     return detection_bytetrack, folder_path
 
-def run_track(vis_folder, current_time, args):
+def run_track(args):
 
 
     tracker = OCSort(det_thresh=args.track_thresh, iou_threshold=args.iou_thresh, use_byte=args.use_byte)
     results = []
 
     # Read detections from the specified folder
-    detections_bytetrack, current_folder = read_detections_from_csv_folder('C:/transmetric/dev/python/AI_camera/trial/OC_SORT-master/067-00007_Wed_Thur_27hrs_1500/2024_1204_154045_002A/2024_1204_154045_002A_2024_1218_104501_raw_detection')
+    detections_bytetrack, current_folder = read_detections_from_csv_folder(
+        'C:/transmetric/dev/python/AI_camera/trial/OC_Sort_tracker/067-00007_Wed_Thur_27hrs_1500/2024_1204_154045_002A/2024_1204_154045_002A_2024_1218_104501_raw_detection')
 
     # Process each frame (frame numbers may be non-continuous)
     for frame_number in sorted(detections_bytetrack.keys()):
@@ -127,7 +128,7 @@ def run_track(vis_folder, current_time, args):
                 for t in online_targets:
                     tlwh = [t[0], t[1], t[2] - t[0], t[3] - t[1]]
                     tid = t[4]
-                    vertical = tlwh[2] / tlwh[3] > args.aspect_ratio_thresh
+                    vertical = tlwh[2] < tlwh[3]
                     if tlwh[2] * tlwh[3] > args.min_box_area and not vertical:
                         online_tlwhs.append(tlwh)
                         online_ids.append(tid)
@@ -147,13 +148,13 @@ def run_track(vis_folder, current_time, args):
                             csv_writer.writerow([frame_number, int(tid), 0, 0, round(tlwh[0], 1), round(tlwh[1], 1),
                                                  round(tlwh[2], 1), round(tlwh[3], 1)])
 
-
-
-        if args.save_result:
-            res_file = osp.join(vis_folder, f"{current_folder.split('/')[-2]}.txt")
-            with open(res_file, 'w') as f:
-                f.writelines(results)
-            logger.info(f"save results to {res_file}")
+        #
+        #
+        # if args.save_result:
+        #     res_file = osp.join(vis_folder, f"{current_folder.split('/')[-2]}.txt")
+        #     with open(res_file, 'w') as f:
+        #         f.writelines(results)
+        #     logger.info(f"save results to {res_file}")
 
 
 def main(exp, args):
@@ -163,61 +164,17 @@ def main(exp, args):
     output_dir = osp.join(exp.output_dir, args.expn)
     os.makedirs(output_dir, exist_ok=True)
 
-    if args.save_result:
-        vis_folder = os.path.join(output_dir, "track_vis")
-        os.makedirs(vis_folder, exist_ok=True)
-
-    if args.trt:
-        args.device = "gpu"
     args.device = torch.device("cuda" if args.device == "gpu" else "cpu")
 
     logger.info("Args: {}".format(args))
-
-    if args.conf is not None:
-        exp.test_conf = args.conf
-    if args.nms is not None:
-        exp.nmsthre = args.nms
-    if args.tsize is not None:
-        exp.test_size = (args.tsize, args.tsize)
 
     model = exp.get_model().to(args.device)
     logger.info("Model Summary: {}".format(get_model_info(model, exp.test_size)))
     model.eval()
 
-    if not args.trt:
-        if args.ckpt is None:
-            ckpt_file = osp.join(output_dir, "best_ckpt.pth.tar")
-        else:
-            ckpt_file = args.ckpt
-        logger.info("loading checkpoint")
-        ckpt = torch.load(ckpt_file, map_location="cpu")
-        # load the model state dict
-        model.load_state_dict(ckpt["model"])
-        logger.info("loaded checkpoint done.")
+    # current_time = time.localtime()
 
-    if args.fuse:
-        logger.info("\tFusing model...")
-        model = fuse_model(model)
-
-    if args.fp32:
-        model = model.half()  # to FP16
-
-    if args.trt:
-        assert not args.fuse, "TensorRT model is not support model fusing!"
-        trt_file = osp.join(output_dir, "model_trt.pth")
-        assert osp.exists(
-            trt_file
-        ), "TensorRT model is not found!\n Run python3 tools/trt.py first!"
-        model.head.decode_in_inference = False
-        decoder = model.head.decode_outputs
-        logger.info("Using TensorRT to inference")
-    else:
-        trt_file = None
-        decoder = None
-
-    current_time = time.localtime()
-
-    run_track(vis_folder, current_time, args)
+    run_track(args)
 
 
 if __name__ == "__main__":
@@ -225,6 +182,6 @@ if __name__ == "__main__":
     args.exp_file = "./exps/example/mot/yolox_dancetrack_val.py"
     args.save_result = True
     args.demo_type = "video"
-    args.use_byte = False
+    args.use_byte = True
     exp = get_exp(args.exp_file, args.name)
     main(exp, args)

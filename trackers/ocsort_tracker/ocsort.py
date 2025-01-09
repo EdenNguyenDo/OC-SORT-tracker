@@ -173,7 +173,7 @@ ASSO_FUNCS = {  "iou": iou_batch,
 
 
 class OCSort(object):
-    def __init__(self, det_thresh, max_age=80, min_hits=4,
+    def __init__(self, det_thresh, max_age=80, min_hits=6,
         iou_threshold=0.3, delta_t=2, asso_func="iou", inertia=0.2, use_byte=True):
         """
         Sets key parameters for SORT
@@ -214,7 +214,7 @@ class OCSort(object):
         # scale = min(img_size[0] / float(img_h), img_size[1] / float(img_w))
         # bboxes /= scale
         dets = np.concatenate((bboxes, np.expand_dims(scores, axis=-1)), axis=1)
-        inds_low = scores > 0.1
+        inds_low = scores > 0.3
         inds_high = scores < self.det_thresh
         inds_second = np.logical_and(inds_low, inds_high)  # self.det_thresh > score > 0.1, for second matching
         dets_second = dets[inds_second]  # detections for second matching
@@ -226,6 +226,8 @@ class OCSort(object):
         trks = np.zeros((len(self.trackers), 5))
         to_del = []
         ret = []
+
+        # Predict next location of current box
         for t, trk in enumerate(trks):
             pos = self.trackers[t].predict()[0]
             trk[:] = [pos[0], pos[1], pos[2], pos[3], 0]

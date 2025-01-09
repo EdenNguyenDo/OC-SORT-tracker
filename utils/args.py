@@ -42,14 +42,14 @@ def make_parser():
     parser.add_argument("--seed", default=None, type=int, help="eval seed")
 
     # tracking args
-    parser.add_argument("--track_thresh", type=float, default=0.72, help="detection confidence threshold")
-    parser.add_argument("--iou_thresh", type=float, default=0.15, help="the iou threshold in Sort for matching")
+    parser.add_argument("--track_thresh", type=float, default=0.8, help="detection confidence threshold")
+    parser.add_argument("--iou_thresh", type=float, default=0.2, help="the iou threshold in Sort for matching")
     parser.add_argument("--min_hits", type=int, default=6, help="min hits to create track in SORT")
     parser.add_argument("--inertia", type=float, default=0.4, help="the weight of VDC term in cost matrix")
     parser.add_argument("--deltat", type=int, default=1.5, help="time step difference to estimate direction")
     parser.add_argument("--track_buffer", type=int, default=60, help="the frames for keep lost tracks")
-    parser.add_argument("--match_thresh", type=float, default=0.83, help="matching threshold for tracking")
-    parser.add_argument('--min-box-area', type=float, default=100, help='filter out tiny boxes')
+    parser.add_argument("--match_thresh", type=float, default=0.85, help="matching threshold for tracking")
+    parser.add_argument('--min-box-area', type=float, default=150, help='filter out tiny boxes')
     parser.add_argument("--gt-type", type=str, default="_val_half", help="suffix to find the gt annotation")
     parser.add_argument("--mot20", dest="mot20", default=False, action="store_true", help="test mot20.")
     parser.add_argument("--public", action="store_true", help="use public detection")
