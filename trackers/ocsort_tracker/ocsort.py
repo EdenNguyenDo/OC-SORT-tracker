@@ -60,7 +60,7 @@ class KalmanBoxTracker(object):
     """
     count = 0
 
-    def __init__(self, bbox, delta_t=3, orig=False):
+    def __init__(self, bbox, delta_t, orig=False):
         """
         Initialises a tracker using initial bounding box.
 
@@ -77,10 +77,10 @@ class KalmanBoxTracker(object):
         self.kf.H = np.array([[1, 0, 0, 0, 0, 0, 0], [0, 1, 0, 0, 0, 0, 0],
                             [0, 0, 1, 0, 0, 0, 0], [0, 0, 0, 1, 0, 0, 0]])
 
-        self.kf.R[2:, 2:] *= 20.  # Adjusted from 10
+        self.kf.R[2:, 2:] *= 5.  # Adjusted from 10
         self.kf.P[4:, 4:] *= 800.  # give high uncertainty to the unobservable initial velocities
-        self.kf.P *= 20. # From 10 to 20
-        self.kf.Q[-1, -1] *= 0.05 # Adjusted from 0.01
+        self.kf.P *= 10.  # From 10 to 20
+        self.kf.Q[-1, -1] *= 0.05  # Adjusted from 0.01
         self.kf.Q[4:, 4:] *= 0.05
 
         self.kf.x[:4] = convert_bbox_to_z(bbox)
@@ -174,7 +174,7 @@ ASSO_FUNCS = {  "iou": iou_batch,
 
 class OCSort(object):
     def __init__(self, det_thresh, max_age=80, min_hits=6,
-        iou_threshold=0.3, delta_t=2, asso_func="iou", inertia=0.2, use_byte=True):
+        iou_threshold=0.3, delta_t=1, asso_func="iou", inertia=0.2, use_byte=True):
         """
         Sets key parameters for SORT
         """
@@ -310,7 +310,7 @@ class OCSort(object):
 
         # create and initialise new trackers for unmatched detections
         for i in unmatched_dets:
-            trk = KalmanBoxTracker(dets[i, :], delta_t=self.delta_t+1)
+            trk = KalmanBoxTracker(dets[i, :], delta_t=self.delta_t)
             self.trackers.append(trk)
         i = len(self.trackers)
         for trk in reversed(self.trackers):
