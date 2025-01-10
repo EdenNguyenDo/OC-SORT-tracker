@@ -190,14 +190,16 @@ class OCSort(object):
         self.use_byte = use_byte
         KalmanBoxTracker.count = 0
 
-    def update(self, output_results, h,w , img_size):
+    def update(self, output_results, h,w , img_size=None):
         """
         Params:
           dets - a numpy array of detections in the format [[x1,y1,x2,y2,score],[x1,y1,x2,y2,score],...]
         Requires: this method must be called once for each frame even with empty detections (use np.empty((0, 5)) for frames without detections).
-        Returns the a similar array, where the last column is the object ID.
+
+        Returns the similar array, where the last column is the object ID.
         NOTE: The number of objects returned may differ from the number of detections provided.
         """
+
         if output_results is None:
             return np.empty((0, 5))
 
@@ -218,9 +220,13 @@ class OCSort(object):
         inds_high = scores < self.det_thresh
         inds_second = np.logical_and(inds_low, inds_high)  # self.det_thresh > score > 0.1, for second matching
         dets_second = dets[inds_second]  # detections for second matching
+        labels_second = labels[inds_second]
+        scores_second = scores[inds_second]
+
         remain_inds = scores > self.det_thresh
         dets = dets[remain_inds]
         labels = labels[remain_inds]
+        scores = scores[remain_inds]
 
         # get predicted locations from existing trackers.
         trks = np.zeros((len(self.trackers), 5))

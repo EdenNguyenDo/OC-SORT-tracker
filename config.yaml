@@ -37,6 +37,7 @@ seed: null  # Evaluation seed (optional)
 
 # Tracking Parameters
 track_thresh: 0.8  # Detection confidence threshold for tracking
+nms_iou_thresh_det: 0.45
 iou_thresh: 0.2  # IOU threshold for SORT matching
 min_hits: 6  # Minimum hits to create track in SORT
 inertia: 0.4  # Weight of VDC term in cost matrix

@@ -52,6 +52,7 @@ def make_parser(config_path=None):
 
     # Tracking Parameters
     parser.add_argument("--track_thresh", type=float, default=get_config_value('track_thresh', 0.8), help="Detection confidence threshold")
+    parser.add_argument("--nms_iou_thresh", type=float, default=get_config_value('nms_iou_thresh_det', 0.45), help="NMS IOU threshold for filtering overlapping boxes")
     parser.add_argument("--iou_thresh", type=float, default=get_config_value('iou_thresh', 0.2), help="IOU threshold for SORT matching")
     parser.add_argument("--min_hits", type=int, default=get_config_value('min_hits', 6), help="Minimum hits to create track in SORT")
     parser.add_argument("--inertia", type=float, default=get_config_value('inertia', 0.4), help="Weight of VDC term in cost matrix")

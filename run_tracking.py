@@ -9,8 +9,7 @@ import sys
 from loguru import logger
 import csv
 
-from sympy import false
-
+from torchvision.ops import nms
 from yolox.data.data_augment import preproc
 from yolox.exp import get_exp
 from yolox.utils import fuse_model, get_model_info, postprocess
@@ -102,6 +101,39 @@ def read_detections_from_csv_folder(folder_path):
 
     return detection_dict, folder_path
 
+
+def apply_nms(detections_tensor, iou_threshold):
+
+    # Extract bounding boxes, scores, and labels
+    boxes = detections_tensor[0][:, :4]  # Bounding box coordinates (x_min, y_min, x_max, y_max)
+    scores = detections_tensor[0][:, 4]  # Confidence scores
+    labels = detections_tensor[0][:, 5]  # Class labels
+
+    # Apply Non-Maximum Suppression (NMS)
+    keep_inds = nms(boxes, scores, iou_threshold)
+
+    # Keep the detections based on NMS filtering
+    kept_boxes = boxes[keep_inds]
+    kept_scores = scores[keep_inds]
+    kept_labels = labels[keep_inds]
+
+    # Filter the detections that passed NMS
+    kept_detections = torch.cat((kept_boxes, kept_scores.unsqueeze(1), kept_labels.unsqueeze(1)), dim=1)
+    detections_nms = [kept_detections]
+
+    return detections_nms
+
+
+
+
+
+
+
+
+
+
+
+
 def run_track(args):
 
     # detection_data = args.detection_data.replace("\\", "/")
@@ -124,8 +156,11 @@ def run_track(args):
 
             detections_tensor = [torch.tensor(outputs_by_frame, dtype=torch.float32)]
 
+            # Apply NMS to remove overlapping boxes.
+            detections_nms = apply_nms(detections_tensor, args.nms_iou_thresh)
+
             if detections_tensor[0] is not None:
-                online_targets = tracker.update(detections_tensor[0], 480, 640)
+                online_targets = tracker.update(detections_nms[0], 480, 640)
                 online_tlwhs = []
                 online_ids = []
                 for t in online_targets:
