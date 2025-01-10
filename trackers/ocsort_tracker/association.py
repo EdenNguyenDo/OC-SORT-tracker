@@ -252,7 +252,8 @@ def associate(detections, trackers, iou_threshold, velocities, previous_obs, vdc
     diff_angle_cos = inertia_X * X + inertia_Y * Y
     diff_angle_cos = np.clip(diff_angle_cos, a_min=-1, a_max=1)
     diff_angle = np.arccos(diff_angle_cos)
-    diff_angle = (np.pi /2.0 - np.abs(diff_angle)) / np.pi
+    diff_angle = (np.pi /2.0 - np.abs(diff_angle)) / np.pi + 0.5
+    """ Add 0.5 to allow more angular tolerance"""
 
     valid_mask = np.ones(previous_obs.shape[0])
     valid_mask[np.where(previous_obs[:,4]<0)] = 0

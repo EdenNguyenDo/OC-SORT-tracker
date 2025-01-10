@@ -142,7 +142,7 @@ def run_track(args):
     detection_data = args.detection_data
     output = args.output
 
-    tracker = OCSort(det_thresh=args.track_thresh, iou_threshold=args.iou_thresh, use_byte=args.use_byte)
+    tracker = OCSort(det_thresh=args.track_thresh, iou_threshold=args.iou_thresh, use_byte=args.use_byte, inertia=args.inertia)
     results = []
 
     # Read detections from the specified folder

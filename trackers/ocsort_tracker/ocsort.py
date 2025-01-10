@@ -77,10 +77,10 @@ class KalmanBoxTracker(object):
         self.kf.H = np.array([[1, 0, 0, 0, 0, 0, 0], [0, 1, 0, 0, 0, 0, 0],
                             [0, 0, 1, 0, 0, 0, 0], [0, 0, 0, 1, 0, 0, 0]])
 
-        self.kf.R[2:, 2:] *= 5.  # Adjusted from 10
+        self.kf.R[2:, 2:] *= 5.  # Measurement Noise Adjusted from 10
         self.kf.P[4:, 4:] *= 800.  # give high uncertainty to the unobservable initial velocities
         self.kf.P *= 10.  # From 10 to 20
-        self.kf.Q[-1, -1] *= 0.05  # Adjusted from 0.01
+        self.kf.Q[-1, -1] *= 0.05  # Process Noise Adjusted from 0.01
         self.kf.Q[4:, 4:] *= 0.05
 
         self.kf.x[:4] = convert_bbox_to_z(bbox)
