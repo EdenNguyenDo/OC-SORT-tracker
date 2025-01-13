@@ -173,7 +173,7 @@ ASSO_FUNCS = {  "iou": iou_batch,
 
 
 class OCSort(object):
-    def __init__(self, det_thresh, max_age=80, min_hits=6,
+    def __init__(self, det_thresh, max_age=60, min_hits=6,
         iou_threshold=0.3, delta_t=1, asso_func="iou", inertia=0.2, use_byte=True):
         """
         Sets key parameters for SORT
@@ -265,7 +265,7 @@ class OCSort(object):
             u_trks = trks[unmatched_trks]
             iou_left = self.asso_func(dets_second, u_trks)          # iou between low score detections and unmatched tracks
             iou_left = np.array(iou_left)
-            if iou_left.max() > self.iou_threshold-0.15:
+            if iou_left.max() > self.iou_threshold-0.1:
                 """
                     NOTE: by using a lower threshold, e.g., self.iou_threshold - 0.1, you may
                     get a higher performance especially on MOT17/MOT20 datasets. But we keep it
@@ -297,7 +297,7 @@ class OCSort(object):
                 to_remove_trk_indices = []
                 for m in rematched_indices:
                     det_ind, trk_ind = unmatched_dets[m[0]], unmatched_trks[m[1]]
-                    if iou_left[m[0], m[1]] < self.iou_threshold-0.15:
+                    if iou_left[m[0], m[1]] < self.iou_threshold-0.1:
                         continue
                     self.trackers[trk_ind].update(dets[det_ind, :])
                     to_remove_det_indices.append(det_ind)
