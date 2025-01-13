@@ -79,7 +79,7 @@ def read_detections_from_csv_folder(folder_path):
             except Exception as e:
                 print(f"Error processing file {file_name}: {e}")
 
-    return detection_dict, folder_path
+    return detection_dict
 
 
 def apply_nms(detections_tensor, iou_threshold):
@@ -113,18 +113,20 @@ def run_track(args):
     # detection_data = args.detection_data.replace("\\", "/")
     # output = args.output.replace("\\", "/")
 
-    detection_data = args.detection_data
+    detection_data_filepath = args.detection_data
     output = args.output
 
     tracker = OCSort(det_thresh=args.track_thresh, iou_threshold=args.iou_thresh, use_byte=args.use_byte,
-                     inertia=args.inertia, min_hits=args.min_hits, max_age=args.max_age, asso_func=args.asso, delta_t=args.deltat)
+                     inertia=args.inertia, min_hits=args.min_hits, max_age=args.track_buffer, asso_func=args.asso, delta_t=args.deltat)
     results = []
 
     # Read detections from the specified folder
-    detections, current_folder = read_detections_from_csv_folder(detection_data)
+    detections = read_detections_from_csv_folder(detection_data_filepath)
+
+    sorted_keys = sorted(detections.keys())
 
     # Process each frame (frame numbers may be non-continuous)
-    for frame_number in sorted(detections.keys()):
+    for frame_number in sorted_keys:
         outputs_by_frame = detections[frame_number]
 
         if len(outputs_by_frame) > 0:
@@ -150,7 +152,7 @@ def run_track(args):
                         )
 
                         # Save tracking data into per-track CSV files
-                        track_file = create_track_file(output, current_folder, int(tid))
+                        track_file = create_track_file(output, detection_data_filepath, int(tid))
 
                         with open(track_file, 'a', newline='') as csvfile:
                             csv_writer = csv.writer(csvfile)

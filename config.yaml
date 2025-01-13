@@ -36,10 +36,10 @@ tsize: null  # Test image size (optional)
 seed: null  # Evaluation seed (optional)
 
 # Tracking Parameters
-track_thresh: 0.8  # Detection confidence threshold for tracking
+track_thresh: 0.85  # Detection confidence threshold for tracking
 nms_iou_thresh_det: 0.4
 iou_thresh: 0.2  # IOU threshold for SORT matching
-min_hits: 6  # Minimum hits to create track in SORT
+min_hits: 5  # Minimum hits to create track in SORT
 inertia: 0.4  # Weight of VDC term in cost matrix - 0.4
 deltat: 1  # Time step difference to estimate direction
 track_buffer: 60  # Frames for keeping lost tracks
@@ -66,6 +66,6 @@ aspect_ratio_thresh: 1.5  # Threshold for filtering boxes with aspect ratio abov
 min_box_area: 8  # Filter out tiny boxes
 device: "gpu"  # Device to run the model (cpu or gpu)
 
-detection_data: "C:/transmetric/dev/python/AI_camera/detection_output/saved_raw_detections/manningham/20230726_070000/20230726_070000_raw_detection"
-output: "C:/transmetric/dev/python/AI_camera/output/tracks"
+detection_data: "C:/transmetric/dev/python/AI_camera/detection_output/saved_raw_detections/manningham/20230725_070000/20230725_070000_2025_0113_125848_raw_detection"
+output: "C:/transmetric/dev/python/AI_camera/output/tracks/manningham/v1"
 
