@@ -5,36 +5,16 @@ import time
 import cv2
 import numpy as np
 import torch
-import sys
-from loguru import logger
 import csv
 
 from torchvision.ops import nms
-from yolox.data.data_augment import preproc
-from yolox.exp import get_exp
-from yolox.utils import fuse_model, get_model_info, postprocess
-from yolox.utils.visualize import plot_tracking
 from trackers.ocsort_tracker.ocsort import OCSort
-from trackers.tracking_utils.timer import Timer
 
 
 IMAGE_EXT = [".jpg", ".jpeg", ".webp", ".bmp", ".png"]
 
 from utils.args import make_parser
 
-#
-# def get_base_directory():
-#     """
-#     Get the base directory where the application is running.
-#     """
-#     if getattr(sys, 'frozen', False):  # Check if running as a bundled executable
-#         # Always set the base directory to the persistent storage location
-#         home_dir = os.path.expanduser("~")
-#         base_dir = os.path.join(home_dir, "COUNT_FILES", "tupi-ai-realtime")
-#     else:
-#         base_dir = os.path.dirname(os.path.abspath(__file__)) # Use script's original directory
-#
-#     return base_dir
 
 
 def create_track_file(output_dir, folder_path, track_id):
@@ -128,12 +108,6 @@ def apply_nms(detections_tensor, iou_threshold):
 
 
 
-
-
-
-
-
-
 def run_track(args):
 
     # detection_data = args.detection_data.replace("\\", "/")
@@ -142,7 +116,8 @@ def run_track(args):
     detection_data = args.detection_data
     output = args.output
 
-    tracker = OCSort(det_thresh=args.track_thresh, iou_threshold=args.iou_thresh, use_byte=args.use_byte, inertia=args.inertia)
+    tracker = OCSort(det_thresh=args.track_thresh, iou_threshold=args.iou_thresh, use_byte=args.use_byte,
+                     inertia=args.inertia, min_hits=args.min_hits, asso_func=args.asso, delta_t=args.deltat)
     results = []
 
     # Read detections from the specified folder
@@ -174,7 +149,6 @@ def run_track(args):
                             f"{frame_number},{tid},{tlwh[0]:.2f},{tlwh[1]:.2f},{tlwh[2]:.2f},{tlwh[3]:.2f},1.0,-1,-1,-1\n"
                         )
 
-
                         # Save tracking data into per-track CSV files
                         track_file = create_track_file(output, current_folder, int(tid))
 
@@ -186,37 +160,7 @@ def run_track(args):
                             csv_writer.writerow([frame_number, int(tid), 0, 0, round(tlwh[0], 1), round(tlwh[1], 1),
                                                  round(tlwh[2], 1), round(tlwh[3], 1)])
 
-        #
-        #
-        # if args.save_result:
-        #     res_file = osp.join(vis_folder, f"{current_folder.split('/')[-2]}.txt")
-        #     with open(res_file, 'w') as f:
-        #         f.writelines(results)
-        #     logger.info(f"save results to {res_file}")
-
-
-# def main(exp, args):
-#     if not args.expn:
-#         args.expn = exp.exp_name
-#
-#     output_dir = osp.join(exp.output_dir, args.expn)
-#     os.makedirs(output_dir, exist_ok=True)
-#
-#     args.device = torch.device("cuda" if args.device == "gpu" else "cpu")
-#
-#     logger.info("Args: {}".format(args))
-#
-#     model = exp.get_model().to(args.device)
-#     logger.info("Model Summary: {}".format(get_model_info(model, exp.test_size)))
-#     model.eval()
-#
-#     # current_time = time.localtime()
-#
-#     run_track(args)
-
 
 if __name__ == "__main__":
     args = make_parser("config.yaml").parse_args()
-    # exp = get_exp(args.exp_file, args.name)
-    # main(exp, args)
     run_track(args)
