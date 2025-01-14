@@ -16,9 +16,7 @@ from utils.args import make_parser
 
 def create_track_file(output_dir, folder_path, track_id):
 
-    dir_name = folder_path.split("/")[-3]
-
-    full_path = os.path.join(output_dir, dir_name, folder_path.split('/')[-2])
+    full_path = os.path.join(output_dir, folder_path.split('/')[-2])
 
     # Ensure the directory exists
     os.makedirs(full_path, exist_ok=True)
@@ -100,12 +98,6 @@ def apply_nms(detections_tensor, iou_threshold):
 
     return detections_nms
 
-def check_parked_vehicle(online_target):
-    track_id = 0
-
-    return track_id
-
-
 
 
 def run_track(args):
@@ -116,14 +108,14 @@ def run_track(args):
     detection_data_filepath = args.detection_data
     output = args.output
 
-    tracker = OCSort(det_thresh=args.track_thresh, iou_threshold=args.iou_thresh, use_byte=args.use_byte,
+    tracker = OCSort(det_thresh=args.track_thresh, lower_det_thresh=args.lower_track_thresh, iou_threshold=args.iou_thresh, use_byte=args.use_byte,
                      inertia=args.inertia, min_hits=args.min_hits, max_age=args.track_buffer, asso_func=args.asso, delta_t=args.deltat)
     results = []
 
     line_count_dict = {}
 
     # Read detections from the specified folder
-    detections = read_detections_from_csv_folder("C:/transmetric/dev/python/AI_camera/trial/OC_Sort_tracker/detections_test")
+    detections = read_detections_from_csv_folder(detection_data_filepath)
 
     sorted_keys = sorted(detections.keys())
 
@@ -159,7 +151,7 @@ def run_track(args):
                             line_count_dict[tid] = 0
 
                         # Only proceed if the line count is below the threshold
-                        if line_count_dict[tid] < args.max_exist:
+                        if line_count_dict[tid] <= args.max_exist:
                             track_file = create_track_file(output, detection_data_filepath, int(tid))
 
                             with open(track_file, 'a', newline='') as csvfile:
@@ -177,8 +169,8 @@ def run_track(args):
 
                                 # Increment line count for tid
                                 line_count_dict[tid] += 1
-                        else:
-                            print(f"Skipping tid {tid}: file already contains {line_count_dict[tid]} lines.")
+                        # else:
+                        #     print(f"Skipping vehicle track {tid}: it retains for over {args.max_exist} frames")
 
 
 if __name__ == "__main__":

@@ -173,7 +173,7 @@ ASSO_FUNCS = {  "iou": iou_batch,
 
 
 class OCSort(object):
-    def __init__(self, det_thresh, max_age=60, min_hits=6,
+    def __init__(self, det_thresh, lower_det_thresh, max_age=60, min_hits=6,
         iou_threshold=0.3, delta_t=1, asso_func="iou", inertia=0.2, use_byte=True):
         """
         Sets key parameters for SORT
@@ -184,6 +184,7 @@ class OCSort(object):
         self.trackers = []
         self.frame_count = 0
         self.det_thresh = det_thresh
+        self.lower_det_thresh = lower_det_thresh
         self.delta_t = delta_t
         self.asso_func = ASSO_FUNCS[asso_func]
         self.inertia = inertia
@@ -216,7 +217,7 @@ class OCSort(object):
         # scale = min(img_size[0] / float(img_h), img_size[1] / float(img_w))
         # bboxes /= scale
         dets = np.concatenate((bboxes, np.expand_dims(scores, axis=-1)), axis=1)
-        inds_low = scores > 0.3
+        inds_low = scores > self.lower_det_thresh
         inds_high = scores < self.det_thresh
         inds_second = np.logical_and(inds_low, inds_high)  # self.det_thresh > score > 0.1, for second matching
         dets_second = dets[inds_second]  # detections for second matching
@@ -308,6 +309,7 @@ class OCSort(object):
         for m in unmatched_trks:
             self.trackers[m].update(None)
 
+
         # create and initialise new trackers for unmatched detections
         for i in unmatched_dets:
             trk = KalmanBoxTracker(dets[i, :], delta_t=self.delta_t)
@@ -322,9 +324,11 @@ class OCSort(object):
                     we didn't notice significant difference here
                 """
                 d = trk.last_observation[:4]
-            if (trk.time_since_update < 1) and (trk.hit_streak >= self.min_hits or self.frame_count <= self.min_hits):
+            if (trk.time_since_update < 1) and (trk.hit_streak >= self.min_hits or self.frame_count <= self.min_hits): # or self.frame_count <= self.min_hits
                 # +1 as MOT benchmark requires positive
                 ret.append(np.concatenate((d, [trk.id+1])).reshape(1, -1))
+                print(ret)
+
             i -= 1
             # remove dead tracklet
             if(trk.time_since_update > self.max_age):
