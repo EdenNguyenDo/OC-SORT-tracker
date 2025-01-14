@@ -10,9 +10,6 @@ import csv
 from torchvision.ops import nms
 from trackers.ocsort_tracker.ocsort import OCSort
 
-
-IMAGE_EXT = [".jpg", ".jpeg", ".webp", ".bmp", ".png"]
-
 from utils.args import make_parser
 
 
@@ -103,7 +100,10 @@ def apply_nms(detections_tensor, iou_threshold):
 
     return detections_nms
 
+def check_parked_vehicle(online_target):
+    track_id = 0
 
+    return track_id
 
 
 
@@ -120,8 +120,10 @@ def run_track(args):
                      inertia=args.inertia, min_hits=args.min_hits, max_age=args.track_buffer, asso_func=args.asso, delta_t=args.deltat)
     results = []
 
+    line_count_dict = {}
+
     # Read detections from the specified folder
-    detections = read_detections_from_csv_folder(detection_data_filepath)
+    detections = read_detections_from_csv_folder("C:/transmetric/dev/python/AI_camera/trial/OC_Sort_tracker/detections_test")
 
     sorted_keys = sorted(detections.keys())
 
@@ -144,6 +146,7 @@ def run_track(args):
                     tlwh = [t[0], t[1], t[2] - t[0], t[3] - t[1]]
                     tid = t[4]
                     vertical = tlwh[2] < tlwh[3]
+
                     if tlwh[2] * tlwh[3] > args.min_box_area and not vertical:
                         online_tlwhs.append(tlwh)
                         online_ids.append(tid)
@@ -151,16 +154,31 @@ def run_track(args):
                             f"{frame_number},{tid},{tlwh[0]:.2f},{tlwh[1]:.2f},{tlwh[2]:.2f},{tlwh[3]:.2f},1.0,-1,-1,-1\n"
                         )
 
-                        # Save tracking data into per-track CSV files
-                        track_file = create_track_file(output, detection_data_filepath, int(tid))
+                        # Update line count for the current tid
+                        if tid not in line_count_dict:
+                            line_count_dict[tid] = 0
 
-                        with open(track_file, 'a', newline='') as csvfile:
-                            csv_writer = csv.writer(csvfile)
-                            if csvfile.tell() == 0:
-                                csv_writer.writerow(
-                                    ["frame_number", "track_id", "class_id", "score", "x_topleft", "y_topleft", "width", "height"])
-                            csv_writer.writerow([frame_number, int(tid), 0, 0, round(tlwh[0], 1), round(tlwh[1], 1),
-                                                 round(tlwh[2], 1), round(tlwh[3], 1)])
+                        # Only proceed if the line count is below the threshold
+                        if line_count_dict[tid] < args.max_exist:
+                            track_file = create_track_file(output, detection_data_filepath, int(tid))
+
+                            with open(track_file, 'a', newline='') as csvfile:
+                                csv_writer = csv.writer(csvfile)
+                                if csvfile.tell() == 0:
+                                    csv_writer.writerow(
+                                        ["frame_number", "track_id", "class_id", "score", "x_topleft", "y_topleft",
+                                         "width", "height"])
+
+                                csv_writer.writerow([
+                                    frame_number, int(tid), 0, 0,
+                                    round(tlwh[0], 1), round(tlwh[1], 1),
+                                    round(tlwh[2], 1), round(tlwh[3], 1)
+                                ])
+
+                                # Increment line count for tid
+                                line_count_dict[tid] += 1
+                        else:
+                            print(f"Skipping tid {tid}: file already contains {line_count_dict[tid]} lines.")
 
 
 if __name__ == "__main__":

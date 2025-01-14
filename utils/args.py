@@ -58,6 +58,7 @@ def make_parser(config_path=None):
     parser.add_argument("--inertia", type=float, default=get_config_value('inertia', 0.4), help="Weight of VDC term in cost matrix")
     parser.add_argument("--deltat", type=int, default=get_config_value('deltat', 1), help="Time step difference to estimate direction")
     parser.add_argument("--track_buffer", type=int, default=get_config_value('track_buffer', 60), help="Frames for keeping lost tracks")
+    parser.add_argument("--max_exist", type=int, default=get_config_value('max_exist', 1001), help="Frames for keeping tracking parked vehicles")
     parser.add_argument("--match_thresh", type=float, default=get_config_value('match_thresh', 0.85), help="Matching threshold for tracking")
     parser.add_argument('--min-box-area', type=float, default=get_config_value('min-box-area', 150), help='Filter out tiny boxes')
     parser.add_argument("--gt-type", type=str, default=get_config_value('gt-type', "_val_half"), help="Suffix to find the GT annotation")

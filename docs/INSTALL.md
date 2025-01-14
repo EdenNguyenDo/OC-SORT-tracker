@@ -6,7 +6,7 @@ Step1. Install OC-SORT
 ```shell
 git clone https://github.com/noahcao/OC_SORT.git
 cd OC_SORT
-pip3 install -r requirements.txt
+pip3 install -r requirements_old.txt
 python3 setup.py develop
 ```
 
