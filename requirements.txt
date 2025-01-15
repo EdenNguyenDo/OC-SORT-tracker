@@ -11,7 +11,7 @@ pycocotools==2.0.8
 PyYAML==6.0.2
 scikit_learn==1.6.1
 scipy==1.15.0
-sympy==1.13.3
+sympy==1.13.1
 setuptools==75.5.0
 torch==2.5.1
 torchvision==0.20.1
