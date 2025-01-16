@@ -77,7 +77,7 @@ class KalmanBoxTracker(object):
         self.kf.H = np.array([[1, 0, 0, 0, 0, 0, 0], [0, 1, 0, 0, 0, 0, 0],
                             [0, 0, 1, 0, 0, 0, 0], [0, 0, 0, 1, 0, 0, 0]])
 
-        self.kf.R[2:, 2:] *= 5.  # Measurement Noise Adjusted from 10
+        self.kf.R[2:, 2:] *= 20.  # Measurement Noise Adjusted from 10
         self.kf.P[4:, 4:] *= 800.  # give high uncertainty to the unobservable initial velocities
         self.kf.P *= 10.  # From 10 to 20
         self.kf.Q[-1, -1] *= 0.05  # Process Noise Adjusted from 0.01
@@ -173,7 +173,7 @@ ASSO_FUNCS = {  "iou": iou_batch,
 
 
 class OCSort(object):
-    def __init__(self, det_thresh, lower_det_thresh, max_age=60, min_hits=6,
+    def __init__(self, det_thresh, lower_det_thresh, max_age=30, min_hits=6,
         iou_threshold=0.3, delta_t=1, asso_func="iou", inertia=0.2, use_byte=True):
         """
         Sets key parameters for SORT
@@ -214,8 +214,9 @@ class OCSort(object):
 
 
         # img_h, img_w = h, w
-        # scale = min(img_size[0] / float(img_h), img_size[1] / float(img_w))
+        # scale = min(1080 / float(img_h), 1920 / float(img_w))
         # bboxes /= scale
+
         dets = np.concatenate((bboxes, np.expand_dims(scores, axis=-1)), axis=1)
         inds_low = scores > self.lower_det_thresh
         inds_high = scores < self.det_thresh
@@ -234,7 +235,7 @@ class OCSort(object):
         to_del = []
         ret = []
 
-        # Predict next location of current box
+        # Predict next location of current active track from last frame
         for t, trk in enumerate(trks):
             pos = self.trackers[t].predict()[0]
             trk[:] = [pos[0], pos[1], pos[2], pos[3], 0]
@@ -253,6 +254,11 @@ class OCSort(object):
         """
             First round of association
         """
+        # trks is the predicted boxes by Kalman Filter active trackers from the last boxes in the current frane
+        # dets is the detected box that is higher than top threshold and is in the current frame
+        # k_observations are the detected boxes is from the last frame
+        # velocities is the velocity direction of the active track from last frame
+
         matched, unmatched_dets, unmatched_trks = associate(
             dets, trks, self.iou_threshold, velocities, k_observations, self.inertia)
         for m in matched:

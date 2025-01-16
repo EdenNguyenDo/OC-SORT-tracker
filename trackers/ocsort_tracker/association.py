@@ -242,9 +242,16 @@ def associate_detections_to_trackers(detections,trackers,iou_threshold = 0.3):
 
 
 def associate(detections, trackers, iou_threshold, velocities, previous_obs, vdc_weight):    
+    # Only proceeds if there is active tracks
     if(len(trackers)==0):
         return np.empty((0,2),dtype=int), np.arange(len(detections)), np.empty((0,5),dtype=int)
 
+
+    """
+    This computes the difference in angle between:
+        + The predicted velocity direction of the tracked objects (inertia_X, inertia_Y).
+        + The direction vectors from the tracks to the detections (X, Y).
+    """
     Y, X = speed_direction_batch(detections, previous_obs)
     inertia_Y, inertia_X = velocities[:,0], velocities[:,1]
     inertia_Y = np.repeat(inertia_Y[:, np.newaxis], Y.shape[1], axis=1)
@@ -252,7 +259,7 @@ def associate(detections, trackers, iou_threshold, velocities, previous_obs, vdc
     diff_angle_cos = inertia_X * X + inertia_Y * Y
     diff_angle_cos = np.clip(diff_angle_cos, a_min=-1, a_max=1)
     diff_angle = np.arccos(diff_angle_cos)
-    diff_angle = (np.pi /2.0 - np.abs(diff_angle)) / np.pi + 0.5
+    diff_angle = (np.pi /2.0 - np.abs(diff_angle)) / np.pi
     """ Add 0.5 to allow more angular tolerance"""
 
     valid_mask = np.ones(previous_obs.shape[0])
@@ -260,32 +267,52 @@ def associate(detections, trackers, iou_threshold, velocities, previous_obs, vdc
     
     iou_matrix = iou_batch(detections, trackers)
     scores = np.repeat(detections[:,-1][:, np.newaxis], trackers.shape[0], axis=1)
-    # iou_matrix = iou_matrix * scores # a trick some items works, we don't encourage this
+
+    iou_matrix = iou_matrix * scores # a trick some items works, we don't encourage this
+
     valid_mask = np.repeat(valid_mask[:, np.newaxis], X.shape[1], axis=1)
 
     angle_diff_cost = (valid_mask * diff_angle) * vdc_weight
     angle_diff_cost = angle_diff_cost.T
     angle_diff_cost = angle_diff_cost * scores
 
+    """
+    Penalise the cost matrix with the detection confidence of the last observed box of the active track.
+    Track with goodness of iou and angle diff is high with low confidence is less favoured now.
+    """
+    # Step 1: Extract track confidence from previous observations
+    track_confidence = previous_obs[:, -1]  # Extract confidence values (last column)
+    track_confidence = np.maximum(track_confidence, 1e-6)  # Avoid division by zero
+
+    # Step 2: Repeat confidence values to match the shape of the cost matrix
+    confidence_weights = np.repeat(track_confidence[:, np.newaxis], detections.shape[0], axis=1).T
+
+    # Step 3: Adjust the cost matrix
+    adjusted_cost_matrix = -(iou_matrix + angle_diff_cost) * confidence_weights
+
+
     if min(iou_matrix.shape) > 0:
         a = (iou_matrix > iou_threshold).astype(np.int32)
         if a.sum(1).max() == 1 and a.sum(0).max() == 1:
             matched_indices = np.stack(np.where(a), axis=1)
         else:
-            matched_indices = linear_assignment(-(iou_matrix+angle_diff_cost))
+            matched_indices = linear_assignment(adjusted_cost_matrix)
     else:
         matched_indices = np.empty(shape=(0,2))
 
+    # Add the current detections to unmatched list if no existing trackers is matched with them in the current frame
     unmatched_detections = []
     for d, det in enumerate(detections):
         if(d not in matched_indices[:,0]):
             unmatched_detections.append(d)
+
+    # Add the existed trackers to unmatched list if no high-conf detections is matched with them in the current frame
     unmatched_trackers = []
     for t, trk in enumerate(trackers):
         if(t not in matched_indices[:,1]):
             unmatched_trackers.append(t)
 
-    # filter out matched with low IOU
+    # filter out matched pair with low IOU before confirm
     matches = []
     for m in matched_indices:
         if(iou_matrix[m[0], m[1]]<iou_threshold):

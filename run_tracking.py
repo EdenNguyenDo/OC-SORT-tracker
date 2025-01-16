@@ -44,6 +44,7 @@ def read_detections_from_csv_folder(folder_path):
             try:
                 # Extract frame number from the file name (assumes frame_<frame_number>.csv format)
                 frame_number = int(file_name.split('.')[0])
+
                 file_path = os.path.join(folder_path, file_name)
 
                 # Initialize the list of detections for this frame
@@ -117,6 +118,10 @@ def run_track(args):
 
     # Process each frame (frame numbers may be non-continuous)
     for frame_number in sorted_keys:
+
+        if frame_number == 3300:
+            break
+
         outputs_by_frame = detections[frame_number]
 
         if len(outputs_by_frame) > 0:
