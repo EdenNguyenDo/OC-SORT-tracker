@@ -41,7 +41,7 @@ iou_thresh: 0.2  # IOU threshold for SORT matching
 min_hits: 5  # Minimum hits to create track in SORT
 inertia: 0.2  # Weight of VDC term in cost matrix - 0.4
 deltat: 1  # Time step difference to estimate direction
-track_buffer: 30  # Frames for keeping lost tracks
+track_buffer: 20  # Frames for keeping lost tracks
 max_exist: 1801
 match_thresh: 0.85  # Matching threshold for tracking
 min-box-area: 150  # Filter out tiny boxes
@@ -66,8 +66,9 @@ aspect_ratio_thresh: 1.5  # Threshold for filtering boxes with aspect ratio abov
 min_box_area: 8  # Filter out tiny boxes
 device: "gpu"  # Device to run the model (cpu or gpu)
 
-detection_data: "C:/transmetric/dev/python/AI_camera/output/detections/manningham/saved_raw_detections/20230725_150000/20230725_150000_2025_0113_142513_raw_detection"
-output: "C:/transmetric/dev/python/AI_camera/trial/OC_Sort_tracker/tracks/067-00007_Wed_Thur_27hrs_1500/2024_1204_154045_002A"
+detection_data: "C:/transmetric/dev/python/AI_camera/output/detections/manningham/saved_raw_detections/20230726_150000/20230726_150000_2025_0113_172820_raw_detection"
+output: "C:/transmetric/dev/python/AI_camera/output/tracks/manningham/v2"
 
-res: "C:/transmetric/dev/python/AI_camera/output/tracks/manningham/v2"
+res: "C:/transmetric/dev/python/AI_camera/trial/OC_Sort_tracker/tracks/067-00007_Wed_Thur_27hrs_1500/2024_1204_154045_002A"
+
 
