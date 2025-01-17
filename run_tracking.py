@@ -119,8 +119,8 @@ def run_track(args):
     # Process each frame (frame numbers may be non-continuous)
     for frame_number in sorted_keys:
 
-        if frame_number == 3300:
-            break
+        # if frame_number == 3300:
+        #     break
 
         outputs_by_frame = detections[frame_number]
 

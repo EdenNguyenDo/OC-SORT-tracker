@@ -24,7 +24,7 @@ def iou_batch(bboxes1, bboxes2):
 def giou_batch(bboxes1, bboxes2):
     """
     :param bbox_p: predict of bbox(N,4)(x1,y1,x2,y2)
-    :param bbox_g: groundtruth of bbox(N,4)(x1,y1,x2,y2)
+    :param bbox_g: ground truth of bbox(N,4)(x1,y1,x2,y2)
     :return:
     """
     # for details should go to https://arxiv.org/pdf/1902.09630.pdf
@@ -186,6 +186,18 @@ def speed_direction_batch(dets, tracks):
     return dy, dx # size: num_track x num_det
 
 
+def euclidean_distance_batch(detections, trackers):
+    # Calculate center points of detections
+    det_centers = np.stack([(detections[:, 0] + detections[:, 2]) / 2,
+                            (detections[:, 1] + detections[:, 3]) / 2], axis=1)
+    # Calculate center points of trackers
+    trk_centers = np.stack([(trackers[:, 0] + trackers[:, 2]) / 2,
+                            (trackers[:, 1] + trackers[:, 3]) / 2], axis=1)
+    # Compute pairwise Euclidean distances
+    dists = np.linalg.norm(det_centers[:, None, :] - trk_centers[None, :, :], axis=2)
+    return dists
+
+
 def linear_assignment(cost_matrix):
     try:
         import lap
@@ -197,55 +209,12 @@ def linear_assignment(cost_matrix):
         return np.array(list(zip(x, y)))
 
 
-def associate_detections_to_trackers(detections,trackers,iou_threshold = 0.3):
-    """
-    Assigns detections to tracked object (both represented as bounding boxes)
-    Returns 3 lists of matches, unmatched_detections and unmatched_trackers
-    """
-    if(len(trackers)==0):
-        return np.empty((0,2),dtype=int), np.arange(len(detections)), np.empty((0,5),dtype=int)
-
-    iou_matrix = iou_batch(detections, trackers)
-
-    if min(iou_matrix.shape) > 0:
-        a = (iou_matrix > iou_threshold).astype(np.int32)
-        if a.sum(1).max() == 1 and a.sum(0).max() == 1:
-            matched_indices = np.stack(np.where(a), axis=1)
-        else:
-            matched_indices = linear_assignment(-iou_matrix)
-    else:
-        matched_indices = np.empty(shape=(0,2))
-
-    unmatched_detections = []
-    for d, det in enumerate(detections):
-        if(d not in matched_indices[:,0]):
-            unmatched_detections.append(d)
-    unmatched_trackers = []
-    for t, trk in enumerate(trackers):
-        if(t not in matched_indices[:,1]):
-            unmatched_trackers.append(t)
-
-    #filter out matched with low IOU
-    matches = []
-    for m in matched_indices:
-        if(iou_matrix[m[0], m[1]]<iou_threshold):
-            unmatched_detections.append(m[0])
-            unmatched_trackers.append(m[1])
-        else:
-            matches.append(m.reshape(1,2))
-    if(len(matches)==0):
-        matches = np.empty((0,2),dtype=int)
-    else:
-        matches = np.concatenate(matches,axis=0)
-
-    return matches, np.array(unmatched_detections), np.array(unmatched_trackers)
 
 
 def associate(detections, trackers, iou_threshold, velocities, previous_obs, vdc_weight):    
     # Only proceeds if there is active tracks
     if(len(trackers)==0):
         return np.empty((0,2),dtype=int), np.arange(len(detections)), np.empty((0,5),dtype=int)
-
 
     """
     This computes the difference in angle between:
@@ -268,13 +237,18 @@ def associate(detections, trackers, iou_threshold, velocities, previous_obs, vdc
     iou_matrix = iou_batch(detections, trackers)
     scores = np.repeat(detections[:,-1][:, np.newaxis], trackers.shape[0], axis=1)
 
-    iou_matrix = iou_matrix * scores # a trick some items works, we don't encourage this
+    # iou_matrix = iou_matrix * scores # a trick some items works, we don't encourage this
 
     valid_mask = np.repeat(valid_mask[:, np.newaxis], X.shape[1], axis=1)
 
     angle_diff_cost = (valid_mask * diff_angle) * vdc_weight
     angle_diff_cost = angle_diff_cost.T
     angle_diff_cost = angle_diff_cost * scores
+
+    # # Compute distance matrix for detections and tracker for distance cost. Less distant is better.
+    # dist_matrix = euclidean_distance_batch(detections,trackers)
+    # dist_matrix_normalized = dist_matrix / np.max(dist_matrix)
+    # dist_cost = dist_matrix_normalized * 1
 
     """
     Penalise the cost matrix with the detection confidence of the last observed box of the active track.
@@ -361,7 +335,7 @@ def associate_kitti(detections, trackers, det_cates, iou_threshold,
     
 
     """
-        With multiple categories, generate the cost for catgory mismatch
+        With multiple categories, generate the cost for category mismatch
     """
     num_dets = detections.shape[0]
     num_trk = trackers.shape[0]
@@ -405,3 +379,56 @@ def associate_kitti(detections, trackers, det_cates, iou_threshold,
         matches = np.concatenate(matches,axis=0)
 
     return matches, np.array(unmatched_detections), np.array(unmatched_trackers)
+
+
+
+
+
+
+
+
+
+
+
+# def associate_detections_to_trackers(detections,trackers,iou_threshold = 0.3):
+#     """
+#     Assigns detections to tracked object (both represented as bounding boxes)
+#     Returns 3 lists of matches, unmatched_detections and unmatched_trackers
+#     """
+#     if(len(trackers)==0):
+#         return np.empty((0,2),dtype=int), np.arange(len(detections)), np.empty((0,5),dtype=int)
+#
+#     iou_matrix = iou_batch(detections, trackers)
+#
+#     if min(iou_matrix.shape) > 0:
+#         a = (iou_matrix > iou_threshold).astype(np.int32)
+#         if a.sum(1).max() == 1 and a.sum(0).max() == 1:
+#             matched_indices = np.stack(np.where(a), axis=1)
+#         else:
+#             matched_indices = linear_assignment(-iou_matrix)
+#     else:
+#         matched_indices = np.empty(shape=(0,2))
+#
+#     unmatched_detections = []
+#     for d, det in enumerate(detections):
+#         if(d not in matched_indices[:,0]):
+#             unmatched_detections.append(d)
+#     unmatched_trackers = []
+#     for t, trk in enumerate(trackers):
+#         if(t not in matched_indices[:,1]):
+#             unmatched_trackers.append(t)
+#
+#     #filter out matched with low IOU
+#     matches = []
+#     for m in matched_indices:
+#         if(iou_matrix[m[0], m[1]]<iou_threshold):
+#             unmatched_detections.append(m[0])
+#             unmatched_trackers.append(m[1])
+#         else:
+#             matches.append(m.reshape(1,2))
+#     if(len(matches)==0):
+#         matches = np.empty((0,2),dtype=int)
+#     else:
+#         matches = np.concatenate(matches,axis=0)
+#
+#     return matches, np.array(unmatched_detections), np.array(unmatched_trackers)

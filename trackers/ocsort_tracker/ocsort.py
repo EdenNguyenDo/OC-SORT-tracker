@@ -267,7 +267,7 @@ class OCSort(object):
         """
             Second round of associaton by OCR
         """
-        # BYTE association
+        # BYTE association between lower confidence box (lower bound < conf < upper bound) and unmatched tracks from first round
         if self.use_byte and len(dets_second) > 0 and unmatched_trks.shape[0] > 0:
             u_trks = trks[unmatched_trks]
             iou_left = self.asso_func(dets_second, u_trks)          # iou between low score detections and unmatched tracks
@@ -288,6 +288,8 @@ class OCSort(object):
                     to_remove_trk_indices.append(trk_ind)
                 unmatched_trks = np.setdiff1d(unmatched_trks, np.array(to_remove_trk_indices))
 
+
+        # Third round of association between leftover detections from first round with unmatched tracks from second round.
         if unmatched_dets.shape[0] > 0 and unmatched_trks.shape[0] > 0:
             left_dets = dets[unmatched_dets]
             left_trks = last_boxes[unmatched_trks]
@@ -312,6 +314,8 @@ class OCSort(object):
                 unmatched_dets = np.setdiff1d(unmatched_dets, np.array(to_remove_det_indices))
                 unmatched_trks = np.setdiff1d(unmatched_trks, np.array(to_remove_trk_indices))
 
+
+        # If there is still unmatched track, update with 0.
         for m in unmatched_trks:
             self.trackers[m].update(None)
 
@@ -320,9 +324,14 @@ class OCSort(object):
         for i in unmatched_dets:
             trk = KalmanBoxTracker(dets[i, :], delta_t=self.delta_t)
             self.trackers.append(trk)
+
         i = len(self.trackers)
+
         for trk in reversed(self.trackers):
             if trk.last_observation.sum() < 0:
+                """
+                d is the last observed box of a tracker.
+                """
                 d = trk.get_state()[0]
             else:
                 """
